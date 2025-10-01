@@ -58,7 +58,7 @@ public class UserService {
         List<Card> cards = cardRepository.list("user.id", userId);
         if (cards.isEmpty()) {
             throw new RuntimeException("User has no card");
-        };
+        }
 
         List<String> cardNos = cards.stream()
                 .map(Card::getCardNo)
@@ -67,17 +67,17 @@ public class UserService {
         List<Transaction> transactions = transactionRepository
                 .list("cardNo in ?1", cardNos);
 
-        // ✅ Group transaksi berdasarkan cardNo sekali saja
+        // Group transaksi berdasarkan cardNo sekali saja
         Map<String, List<Transaction>> trxMap = transactions.stream()
                 .collect(Collectors.groupingBy(Transaction::getCardNo));
 
-        // 3. Mapping user info
+        // Mapping user info
         UserTransactionDTO dto = new UserTransactionDTO();
         dto.setFirstname(user.getFirstName());
         dto.setLastname(user.getLastName());
         dto.setEmail(user.getEmail());
 
-        // 4. Mapping card + transaksi per card
+        // Mapping card + transaksi per card
         List<UserTransactionDTO.CardDTO> cardDTOList = cards.stream().map(card -> {
             UserTransactionDTO.CardDTO cardDTO = new UserTransactionDTO.CardDTO();
             cardDTO.setCardNo(card.getCardNo());
@@ -112,23 +112,22 @@ public class UserService {
     )
     public UserDTO createUser2(UserDTO dto, String currentUser) throws SQLException {
 
-        // ✅ Validasi unik email (tidak memicu rollback jika gagal)
+        // Validasi unik email (tidak memicu rollback jika gagal)
         if (userRepository.existsByEmail(dto.getEmail())) {
             throw new ValidationException("Email sudah terdaftar");
         }
 
-        // ✅ Mapping DTO → Entity
+        // Mapping DTO → Entity
         User user = userMapper.toEntity(dto);
 
-        // ✅ Simpan ke DB
+        // Simpan ke DB
         userRepository.persist(user);
 
-        // ⚠️ Contoh pemicu SQLException (simulasi)
+        // Contoh pemicu SQLException (simulasi)
         if ("error".equalsIgnoreCase(dto.getFirstName())) {
             throw new SQLException("Simulasi kegagalan database");
         }
 
-        // ✅ Kembalikan DTO hasil
         return dto;
     }
 
@@ -152,7 +151,7 @@ public class UserService {
         userRepository.persist(user);
         userRepository.flush();
 
-        // ⚠️Contoh pemicu SQLException (simulasi)
+        // Contoh pemicu SQLException (simulasi)
         if ("error".equalsIgnoreCase(userDTO.getFirstName())) {
             throw new BusinessException("Simulasi kegagalan database");
         }
@@ -262,14 +261,14 @@ public class UserService {
     public UserDTO complexBusinessOperation(UserDTO userDTO, String operatedBy) {
         LOGGER.info("Starting complex business operation for user: {}", userDTO.getEmail());
 
-        // Step 1: Create user in main transaction (REQUIRED)
+        // Create user in main transaction (REQUIRED)
         UserDTO createdUser = createUser(userDTO, operatedBy);
 
         try {
-            // Step 2: Perform audit logging in separate transaction (REQUIRES_NEW)
+            // Perform audit logging in separate transaction (REQUIRES_NEW)
             transactionalDemoService.auditUserOperation("CREATE", createdUser.getId(), operatedBy);
 
-            // Step 3: Update some business logic (SUPPORTS)
+            // Update some business logic (SUPPORTS)
             createdUser.setPosition("New Employee");
             UserDTO updatedUser = updateUserWithSupports(createdUser.getId(), createdUser, operatedBy);
 
@@ -296,7 +295,6 @@ public class UserService {
     public List<UserDTO> bulkCreateUsersWithReadCommitted(List<UserDTO> users, String createdBy) {
         LOGGER.info("Bulk creating {} users with READ_COMMITTED isolation", users.size());
 
-        // This will use the default READ_COMMITTED isolation level from application.properties
         List<User> createdUsers = users.stream()
                 .map(dto -> {
                     validateUserForCreate(dto);
@@ -398,7 +396,6 @@ public class UserService {
     }
 
     // Helper methods
-
     private User findUserEntityById(Long userId) {
         return userRepository.findByIdOptional(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));

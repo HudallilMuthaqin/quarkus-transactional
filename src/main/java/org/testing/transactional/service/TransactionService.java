@@ -32,13 +32,13 @@ public class TransactionService {
     /* ===================== TOPUP PENDING ===================== */
     @Transactional(REQUIRES_NEW)
     public TransactionDTO crateTopup(TransactionDTO dto) throws BusinessException {
-        // 1. Cari kartu
+        // Cari kartu
         Card card = cardRepository.find("cardNo", dto.getCardNo())
                 .withLock(LockModeType.PESSIMISTIC_WRITE)
                 .firstResultOptional()
                 .orElseThrow(() -> new BusinessException("Card Data Not Found : " + dto.getCardNo()));
 
-        // 2. Set data
+        // Set data
         Transaction trx = new Transaction();
         trx.setCardName(card.getCardName());
         trx.setCardNo(card.getCardNo());
@@ -57,14 +57,14 @@ public class TransactionService {
     /* ===================== DIRECT TOPUP ===================== */
     @Transactional(REQUIRES_NEW)
     public TransactionDTO crateDirectTopup(TransactionDTO dto) throws BusinessException {
-        // 1. Cari kartu
+        // Cari kartu
         Card card = cardRepository.findByCardNo(dto.getCardNo()).orElseThrow(() -> new BusinessException("Card Data Not Found : " + dto.getCardNo()));
 
-        // 2. Tambah saldo langsung
+        // Tambah saldo langsung
         card.setBalance(card.getBalance() + dto.getAmount());
         cardRepository.flush();
 
-        // 3. Catat transaksi SUCCESS
+        // Catat transaksi SUCCESS
         Transaction trx = new Transaction();
         trx.setCardName(card.getCardName());
         trx.setCardNo(card.getCardNo());
@@ -83,20 +83,20 @@ public class TransactionService {
     /* ===================== PURCHASE ===================== */
     @Transactional(REQUIRES_NEW)
     public TransactionDTO cratePurchase(TransactionDTO dto) throws BusinessException {
-        // 1. Cari kartu
+        // Cari kartu
         Card card = cardRepository.findByCardNo(dto.getCardNo()).orElseThrow(() -> new BusinessException("Card Data Not Found : " + dto.getCardNo()));
 
-        // 2. Validasi saldo
+        // Validasi saldo
         if (card.getBalance() < dto.getAmount()) {
             throw new BusinessException("Insufficient balance. Current: "
                     + card.getBalance() + ", Required: " + dto.getAmount());
         }
 
-        // 3. Kurangi saldo
+        // Kurangi saldo
         card.setBalance(card.getBalance() - dto.getAmount());
         cardRepository.flush();
 
-        // 4. Catat transaksi SUCCESS
+        // Catat transaksi SUCCESS
         Transaction trx = new Transaction();
         trx.setCardName(card.getCardName());
         trx.setCardNo(card.getCardNo());
@@ -112,12 +112,6 @@ public class TransactionService {
         return mapToDTO(trx);
     }
 
-    /* ===================== HELPER METHOD ===================== */
-//    private Card findCard(String cardNo) throws BusinessException {
-//        return cardRepository.findByCardNo(cardNo)
-//                .orElseThrow(() -> new BusinessException("Card Data Not Found : " + cardNo));
-//    }
-
     private TransactionDTO mapToDTO(Transaction trx) {
         TransactionDTO dto = new TransactionDTO();
         dto.setId(trx.getId());
@@ -129,7 +123,7 @@ public class TransactionService {
         dto.setStatus(trx.getStatus());
         dto.setTransactionType(trx.getTransactionType());
         dto.setCreatedAt(trx.getCreatedAt());
-        // ✅ Ambil saldo langsung dari tabel test_card
+        // Ambil saldo langsung dari tabel test_card
         Card card = cardRepository.find("cardNo", trx.getCardNo()).firstResult();
         if (card != null) {
             dto.setBalance(card.getBalance());

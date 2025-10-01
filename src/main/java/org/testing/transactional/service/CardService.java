@@ -91,6 +91,7 @@ public class CardService {
     }
 
     private void validateDuplicateForCreate(CardDTO cardDTO) {
+        LOGGER.info("Validating duplicate Card Number: {} for creation", cardDTO.getCardNo());
         if (cardRepository.cardNoDuplicate(cardDTO.getCardNo())) {
             throw new BusinessException(ErrorConstants.CARD_NUMBER_DUPLICATE + cardDTO.getCardNo());
         }
